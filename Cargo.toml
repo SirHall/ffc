@@ -8,7 +8,7 @@ edition = "2021"
 [dependencies]
 # ndarray = { version = "0.15.4", features = ["serde", "rayon"] }
 rand = "0.8.5"
-rayon = "1.5.1"
+rayon = "1.5.2"
 serde = { version = "1.0.136", features = ["derive"] }
 
 [dev-dependencies]

@@ -1,19 +1,17 @@
-use std::fmt::Display;
-
 use super::pos::Pos;
+use std::fmt::Display;
+use std::hash::Hash;
 
-pub struct Grid<T>
-where
-    T : PartialEq + Clone + Display,
+pub trait GridCellT = PartialEq + Eq + Hash + Clone + Display;
+
+pub struct Grid<T : GridCellT>
 {
     grid :   Vec<T>,
     width :  usize,
     height : usize,
 }
 
-impl<T> Grid<T>
-where
-    T : PartialEq + Clone + Display,
+impl<T : GridCellT> Grid<T>
 {
     pub fn new(cells : Vec<T>, width : usize) -> Self
     {
@@ -26,7 +24,7 @@ where
 
     pub fn pos_to_i(&self, pos : Pos) -> usize { pos.y * self.width + pos.x }
 
-    pub fn i_to_pos(&self, i : usize) -> Pos { Pos::new(i % self.width, y / self.width) }
+    pub fn i_to_pos(&self, i : usize) -> Pos { Pos::new(i % self.width, i / self.width) }
 
     pub fn get(&self, pos : Pos, outer : T) -> T
     {
@@ -45,9 +43,10 @@ where
 
     pub fn set(&mut self, pos : Pos, val : T)
     {
-        if self.is_valid(pos)
+        if self.is_valid(pos.clone())
         {
-            self.grid[self.pos_to_i(pos)] = val;
+            let i = self.pos_to_i(pos);
+            self.grid[i] = val;
         }
     }
 

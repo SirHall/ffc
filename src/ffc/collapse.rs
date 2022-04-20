@@ -1,10 +1,17 @@
+use super::{
+    grid::{Grid, GridCellT},
+    pos::Pos,
+};
+use rayon::prelude::*;
 use std::collections::{hash_map, HashMap};
 
-use rayon::iter::IntoParallelRefIterator;
-
-use super::grid::Grid;
-
-pub fn initialize<T>(pattern : Grid<T>, out_width : usize, out_height : usize, unset : T, outer : T) -> Grid<T>
+pub fn initialize<T : GridCellT>(
+    pattern : Grid<T>,
+    out_width : usize,
+    out_height : usize,
+    unset : T,
+    outer : T,
+) -> Grid<T>
 {
     let out_grid = Grid::new(vec![unset; out_width * out_height], out_width);
 
@@ -15,24 +22,25 @@ pub fn initialize<T>(pattern : Grid<T>, out_width : usize, out_height : usize, u
     for i in 0..pattern.get_area()
     {
         let pos = pattern.i_to_pos(i);
-        let tile = pattern.get(pos, outer);
+        let tile = pattern.get(pos.clone(), outer.clone());
 
-        pattern_map.get_mut(&tile).get_or_insert_with(|| vec![;0]).push(pos);
+        pattern_map.entry(tile).or_insert_with(|| vec![]).push(pos);
     }
 
     out_grid
 }
 
-pub fn collapse<T>(
+pub fn collapse<T : GridCellT>(
     mut grid : Grid<T>,
     evaluate_order : &Vec<usize>,
-    pattern_map : &HashMap<T, Vec<Pos>>,
+    pattern_map : &HashMap<T, Vec<Pos>>, // Most likely not needed
+    pattern : &Grid<T>,
     pattern_unset_matches_all : bool,
     reroll_attempts : usize,
     climb_amount_on_reroll : usize,
     unset : T,
     outer : T,
-) -> Grid
+) -> Grid<T>
 {
     // | evaluate_order
     // + evaluate_order is a list of indices where each index in the output grid exists once and only once.
@@ -55,24 +63,31 @@ pub fn collapse<T>(
 
     let roll_count = vec![0usize; 0];
 
+    // let empty = vec![];
+
     loop
     {
         let eval_pos = grid.i_to_pos(evaluate_order[i]);
-        let eval_tile = grid.get(eval_pos, outer);
+        let eval_tile = grid.get(eval_pos, outer.clone());
 
-        let set_options;
-        {
-            let current_pattern_it = pattern_map.get(&eval_tile).unwrap_or_default().par_iter();
-            let all_pattern_it = if pattern_unset_matches_all
-            {
-                pattern_map.get(&unset).unwrap_or_default().par_iter()
-            }
-            else
-            {
-                (vec![;0]).par_iter()
-            };
-            // .extend(pattern_map.get(k));
-        }
+        // let set_options;
+        // {
+        //     let current_pattern_it = pattern_map.get(&eval_tile).unwrap_or_else(|| &empty).par_iter();
+        //     let unset_pattern_it;
+        //     if pattern_unset_matches_all
+        //     {
+        //         unset_pattern_it = pattern_map.get(&unset).unwrap_or_else(|| &empty).par_iter();
+        //     }
+        //     else
+        //     {
+        //         unset_pattern_it = [].par_iter();
+        //     };
+
+        //     // Iterates over all patterns that have the same center as our current tile
+        //     let all_pattern_it = current_pattern_it.interleave(unset_pattern_it);
+
+        //     // Now iterate over all of these patterns and find which *could* fit into our current location
+        // }
 
         // grid.set(eval_pos, val);
 
