@@ -1,4 +1,4 @@
-use super::{grid::Grid, pos::Pos};
+use crate::prelude::*;
 
 #[test]
 fn test_compare() -> Result<(), String>
