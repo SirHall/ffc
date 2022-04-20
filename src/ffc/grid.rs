@@ -26,6 +26,8 @@ where
 
     pub fn pos_to_i(&self, pos : Pos) -> usize { pos.y * self.width + pos.x }
 
+    pub fn i_to_pos(&self, i : usize) -> Pos { Pos::new(i % self.width, y / self.width) }
+
     pub fn get(&self, pos : Pos, outer : T) -> T
     {
         if self.is_valid(pos.clone())
@@ -38,6 +40,14 @@ where
         else
         {
             outer.clone()
+        }
+    }
+
+    pub fn set(&mut self, pos : Pos, val : T)
+    {
+        if self.is_valid(pos)
+        {
+            self.grid[self.pos_to_i(pos)] = val;
         }
     }
 
