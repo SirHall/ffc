@@ -23,7 +23,7 @@ fn test_compare() -> Result<(), String>
         4,
     );
 
-    if Grid::compare(&a, Pos::new(1, 1), &b, Pos::new(2, 2), 1, 127, 0)
+    if Grid::compare(&a, Pos::new(1, 1), &b, Pos::new(2, 2), 1, 127, 128)
     {
         Ok(())
     }

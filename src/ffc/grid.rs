@@ -1,8 +1,10 @@
+use std::fmt::Display;
+
 use super::pos::Pos;
 
 pub struct Grid<T>
 where
-    T : PartialEq + Clone,
+    T : PartialEq + Clone + Display,
 {
     grid :   Vec<T>,
     width :  usize,
@@ -11,14 +13,14 @@ where
 
 impl<T> Grid<T>
 where
-    T : PartialEq + Clone,
+    T : PartialEq + Clone + Display,
 {
     pub fn new(cells : Vec<T>, width : usize) -> Self
     {
         Self {
-            height : width / cells.len(),
-            grid : cells,
             width,
+            height : cells.len() / width,
+            grid : cells,
         }
     }
 
@@ -55,9 +57,9 @@ where
         outer : T,
     ) -> bool
     {
-        for dx in (-radius)..radius
+        for dx in (-radius)..=radius
         {
-            for dy in (-radius)..radius
+            for dy in (-radius)..=radius
             {
                 let a_pos = a_center.rel(dx, dy);
                 let b_pos = b_center.rel(dx, dy);
@@ -68,7 +70,7 @@ where
                 let a_tile = a.get(a_pos, outer.clone());
                 let b_tile = b.get(b_pos, outer.clone());
 
-                // A cool trick is to set 'outer' to 'unset'
+                // A cool trick is to set 'outer' to 'unset' so that anything outside the image will match to everything
 
                 if a_tile != b_tile && a_tile != unset && b_tile != unset
                 {
