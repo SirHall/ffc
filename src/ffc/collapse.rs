@@ -2,8 +2,9 @@ use super::{
     grid::{Grid, GridCellT},
     pos::Pos,
 };
+use rand::prelude::SliceRandom;
 use rayon::prelude::*;
-use std::collections::{hash_map, HashMap};
+use std::collections::HashMap;
 
 pub fn initialize<T : GridCellT>(
     pattern : Grid<T>,
@@ -15,16 +16,10 @@ pub fn initialize<T : GridCellT>(
 {
     let out_grid = Grid::new(vec![unset; out_width * out_height], out_width);
 
-    // Maps an input center cell value to a list of positions in the pattern map with that center value
-
-    let mut pattern_map = HashMap::<T, Vec<Pos>>::new();
-
     for i in 0..pattern.get_area()
     {
         let pos = pattern.i_to_pos(i);
         let tile = pattern.get(pos.clone(), outer.clone());
-
-        pattern_map.entry(tile).or_insert_with(|| vec![]).push(pos);
     }
 
     out_grid
@@ -33,14 +28,15 @@ pub fn initialize<T : GridCellT>(
 pub fn collapse<T : GridCellT>(
     mut grid : Grid<T>,
     evaluate_order : &Vec<usize>,
-    pattern_map : &HashMap<T, Vec<Pos>>, // Most likely not needed
+    // pattern_map : &HashMap<T, Vec<Pos>>, // Most likely not needed
     pattern : &Grid<T>,
-    pattern_unset_matches_all : bool,
+    radius : isize,
+    // pattern_unset_matches_all : bool,
     reroll_attempts : usize,
     climb_amount_on_reroll : usize,
     unset : T,
     outer : T,
-) -> Grid<T>
+) -> Option<Grid<T>>
 {
     // | evaluate_order
     // + evaluate_order is a list of indices where each index in the output grid exists once and only once.
@@ -59,38 +55,62 @@ pub fn collapse<T : GridCellT>(
     // + When we reroll we jump backward through the evaluate_order list by this number, generally advised to keep
     // + this at 1.
 
-    let mut i = 0;
+    // roll_count serves as a stack to count the number of times we have rolled the current evaluation index (always the
+    // top of the stack/last item)
+    let mut roll_counts = vec![0];
 
-    let roll_count = vec![0usize; 0];
+    let mut rng = rand::rngs::ThreadRng::default();
 
-    // let empty = vec![];
-
-    loop
+    while roll_counts.len() < evaluate_order.len()
     {
+        if roll_counts.is_empty()
+        {
+            return None; // We've failed to generate anything
+        }
+
+        let i = roll_counts.len() - 1;
+
+        roll_counts[i] += 1; // Are are doing the roll for this evaluation index now
         let eval_pos = grid.i_to_pos(evaluate_order[i]);
-        let eval_tile = grid.get(eval_pos, outer.clone());
 
-        // let set_options;
-        // {
-        //     let current_pattern_it = pattern_map.get(&eval_tile).unwrap_or_else(|| &empty).par_iter();
-        //     let unset_pattern_it;
-        //     if pattern_unset_matches_all
-        //     {
-        //         unset_pattern_it = pattern_map.get(&unset).unwrap_or_else(|| &empty).par_iter();
-        //     }
-        //     else
-        //     {
-        //         unset_pattern_it = [].par_iter();
-        //     };
+        // Iterate over all cells in the source pattern, and form a list of all local patterns that could be used at
+        // this tile's location
+        let valid_pattern_pos_list = (0..pattern.get_area())
+            .into_par_iter()
+            .map(|pattern_i| pattern.i_to_pos(pattern_i))
+            .filter(|p_pos| {
+                Grid::compare(
+                    &grid,
+                    eval_pos.clone(),
+                    pattern,
+                    p_pos.to_owned(),
+                    radius,
+                    unset.clone(),
+                    outer.clone(),
+                )
+            })
+            .collect::<Vec<_>>();
 
-        //     // Iterates over all patterns that have the same center as our current tile
-        //     let all_pattern_it = current_pattern_it.interleave(unset_pattern_it);
+        if valid_pattern_pos_list.is_empty()
+        {
+            // TODO:
+            // We have nothing to put here, fall back to a previous step and roll again
+            for _ix in 0..climb_amount_on_reroll
+            {
+                roll_counts.pop();
+            }
+        }
+        else
+        {
+            // We have at-least one pattern we can super impose here, choose one at random
+            let selection_pos = valid_pattern_pos_list.choose(&mut rng).unwrap().to_owned();
+            grid.set(eval_pos, pattern.get(selection_pos, outer.clone()));
 
-        //     // Now iterate over all of these patterns and find which *could* fit into our current location
-        // }
+            // Push a 0 roll count for the next evaluated position element
 
-        // grid.set(eval_pos, val);
-
-        i += 1;
+            roll_counts.push(0);
+        }
     }
+
+    Some(grid)
 }

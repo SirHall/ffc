@@ -2,7 +2,7 @@ use super::pos::Pos;
 use std::fmt::Display;
 use std::hash::Hash;
 
-pub trait GridCellT = PartialEq + Eq + Hash + Clone + Display;
+pub trait GridCellT = PartialEq + Eq + Hash + Clone + Display + Sync + Send;
 
 pub struct Grid<T : GridCellT>
 {
