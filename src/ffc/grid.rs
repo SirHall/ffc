@@ -4,6 +4,7 @@ use std::hash::Hash;
 
 pub trait GridCellT = PartialEq + Eq + Hash + Clone + Display + Sync + Send;
 
+#[derive(Debug, Clone)]
 pub struct Grid<T : GridCellT>
 {
     grid :   Vec<T>,

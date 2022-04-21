@@ -7,7 +7,7 @@ use rayon::prelude::*;
 use std::collections::HashMap;
 
 pub fn initialize<T : GridCellT>(
-    pattern : Grid<T>,
+    pattern : &Grid<T>,
     out_width : usize,
     out_height : usize,
     unset : T,
@@ -69,9 +69,23 @@ pub fn collapse<T : GridCellT>(
         }
 
         let i = roll_counts.len() - 1;
+        // println!("i: {i}");
 
         roll_counts[i] += 1; // Are are doing the roll for this evaluation index now
         let eval_pos = grid.i_to_pos(evaluate_order[i]);
+
+        if roll_counts[i] > reroll_attempts
+        {
+            // TODO: KEEP THIS DRY
+            for _ix in 0..climb_amount_on_reroll
+            {
+                if !roll_counts.is_empty()
+                {
+                    roll_counts.pop();
+                }
+            }
+            continue;
+        }
 
         // Iterate over all cells in the source pattern, and form a list of all local patterns that could be used at
         // this tile's location
@@ -95,9 +109,13 @@ pub fn collapse<T : GridCellT>(
         {
             // TODO:
             // We have nothing to put here, fall back to a previous step and roll again
+            // TODO: KEEP THIS DRY
             for _ix in 0..climb_amount_on_reroll
             {
-                roll_counts.pop();
+                if !roll_counts.is_empty()
+                {
+                    roll_counts.pop();
+                }
             }
         }
         else
