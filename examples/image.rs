@@ -4,6 +4,7 @@ use ffc::ffc::collapse;
 use ffc::prelude::*;
 use image::io::Reader as ImageReader;
 use image::{DynamicImage, GenericImage, GenericImageView, Pixel, Rgba};
+use rand::prelude::SliceRandom;
 use std::io::Cursor;
 use std::{
     collections::HashMap,
@@ -40,6 +41,9 @@ struct Args
 fn main() -> Result<()>
 {
     let args = Args::parse();
+
+    let unset = 0;
+    let outer = 1;
 
     // 0 - Reserved for unset
     // 1 - Reserved for outer
@@ -80,22 +84,25 @@ fn main() -> Result<()>
     // ---
 
     // TODO: Use a smarter evaluation order
-    let evaluate_order = (0..pattern.get_area()).collect::<Vec<_>>();
+    let mut evaluate_order = (0..(args.width * args.height)).collect::<Vec<_>>();
+
+    // let mut rng = rand::thread_rng();
+    // evaluate_order.shuffle(&mut rng);
 
     for gen_num in 1..=1
     //(args.count.unwrap_or(1))
     {
-        let mut grid = initialize::<usize>(&pattern, args.width, args.height, 0, 1);
+        let mut grid = initialize::<usize>(&pattern, args.width, args.height, unset, outer);
 
         match collapse(
             grid,
             &evaluate_order,
             &pattern,
             args.radius as isize,
-            args.reroll_attempts.unwrap_or(3),
-            1, // TODO:
-            0, // TODO:
-            1,
+            args.reroll_attempts.unwrap_or(2),
+            1,     // TODO:
+            unset, // TODO:
+            outer,
         )
         {
             Some(generated_grid) =>
@@ -108,7 +115,7 @@ fn main() -> Result<()>
                 {
                     let pos = generated_grid.i_to_pos(i);
                     let pixel_rgba_u32 = int_to_pixel[generated_grid.get(pos.clone(), 1)];
-                    println!("{pixel_rgba_u32}",);
+                    // println!("{pixel_rgba_u32}",);
                     let pixel_rgba_4u8 = pixel_rgba_u32.to_ne_bytes();
                     let pixel_rgba = Rgba::from_slice(&pixel_rgba_4u8);
                     unsafe {

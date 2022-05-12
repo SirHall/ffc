@@ -23,9 +23,9 @@ impl<T : GridCellT> Grid<T>
         }
     }
 
-    pub fn pos_to_i(&self, pos : Pos) -> usize { pos.y * self.width + pos.x }
+    pub fn pos_to_i(&self, pos : Pos) -> usize { ((pos.y * (self.width as isize)) + pos.x) as usize }
 
-    pub fn i_to_pos(&self, i : usize) -> Pos { Pos::new(i % self.width, i / self.width) }
+    pub fn i_to_pos(&self, i : usize) -> Pos { Pos::new((i % self.width) as isize, (i / self.width) as isize) }
 
     pub fn get(&self, pos : Pos, outer : T) -> T
     {
@@ -38,7 +38,7 @@ impl<T : GridCellT> Grid<T>
         }
         else
         {
-            outer.clone()
+            outer
         }
     }
 
@@ -55,7 +55,10 @@ impl<T : GridCellT> Grid<T>
     pub fn get_height(&self) -> usize { self.height }
     pub fn get_area(&self) -> usize { self.grid.len() }
 
-    pub fn is_valid(&self, pos : Pos) -> bool { pos.x < self.width && pos.y < self.height }
+    pub fn is_valid(&self, pos : Pos) -> bool
+    {
+        pos.x < (self.width as isize) && pos.x >= 0 && pos.y < (self.height as isize) && pos.y >= 0
+    }
 
     pub fn compare(
         a : &Grid<T>,

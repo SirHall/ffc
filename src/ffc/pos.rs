@@ -1,13 +1,13 @@
 #[derive(Debug, Default, Clone)]
 pub struct Pos
 {
-    pub x : usize,
-    pub y : usize,
+    pub x : isize,
+    pub y : isize,
 }
 
 impl Pos
 {
-    pub fn new(x : usize, y : usize) -> Self
+    pub fn new(x : isize, y : isize) -> Self
     {
         Pos {
             x,
@@ -19,8 +19,8 @@ impl Pos
     pub fn rel(&self, dx : isize, dy : isize) -> Pos
     {
         Pos {
-            x : ((self.x as isize) + dx) as usize,
-            y : ((self.y as isize) + dy) as usize,
+            x : self.x + dx,
+            y : self.y + dy,
         }
     }
 }

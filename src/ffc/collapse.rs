@@ -28,7 +28,6 @@ pub fn initialize<T : GridCellT>(
 pub fn collapse<T : GridCellT>(
     mut grid : Grid<T>,
     evaluate_order : &Vec<usize>,
-    // pattern_map : &HashMap<T, Vec<Pos>>, // Most likely not needed
     pattern : &Grid<T>,
     radius : isize,
     // pattern_unset_matches_all : bool,
@@ -59,6 +58,19 @@ pub fn collapse<T : GridCellT>(
     // top of the stack/last item)
     let mut roll_counts = vec![0];
 
+    macro_rules! fallback {
+        () => {
+            for _ix in 0..climb_amount_on_reroll
+            {
+                if !roll_counts.is_empty()
+                {
+                    roll_counts.pop();
+                    grid.set(grid.i_to_pos(roll_counts.len() - 1), unset.clone());
+                }
+            }
+        };
+    }
+
     let mut rng = rand::rngs::ThreadRng::default();
 
     while roll_counts.len() < evaluate_order.len()
@@ -69,28 +81,24 @@ pub fn collapse<T : GridCellT>(
         }
 
         let i = roll_counts.len() - 1;
-        // println!("i: {i}");
+        // println!("i: {} {}", i, roll_counts[i]);
 
-        roll_counts[i] += 1; // Are are doing the roll for this evaluation index now
+        roll_counts[i] += 1; // We are doing the roll for this evaluation index now
         let eval_pos = grid.i_to_pos(evaluate_order[i]);
+        grid.set(eval_pos.clone(), unset.clone());
 
         if roll_counts[i] > reroll_attempts
         {
-            // TODO: KEEP THIS DRY
-            for _ix in 0..climb_amount_on_reroll
-            {
-                if !roll_counts.is_empty()
-                {
-                    roll_counts.pop();
-                }
-            }
+            fallback!();
             continue;
         }
+
+        // println!("{i}");
 
         // Iterate over all cells in the source pattern, and form a list of all local patterns that could be used at
         // this tile's location
         let valid_pattern_pos_list = (0..pattern.get_area())
-            .into_par_iter()
+            .into_iter() // This is about 9 times slower when using into_par_iter
             .map(|pattern_i| pattern.i_to_pos(pattern_i))
             .filter(|p_pos| {
                 Grid::compare(
@@ -107,21 +115,14 @@ pub fn collapse<T : GridCellT>(
 
         if valid_pattern_pos_list.is_empty()
         {
-            // TODO:
             // We have nothing to put here, fall back to a previous step and roll again
-            // TODO: KEEP THIS DRY
-            for _ix in 0..climb_amount_on_reroll
-            {
-                if !roll_counts.is_empty()
-                {
-                    roll_counts.pop();
-                }
-            }
+            fallback!();
         }
         else
         {
             // We have at-least one pattern we can super impose here, choose one at random
             let selection_pos = valid_pattern_pos_list.choose(&mut rng).unwrap().to_owned();
+            // println!("Pos: {} {}", selection_pos.x, selection_pos.y);
             grid.set(eval_pos, pattern.get(selection_pos, outer.clone()));
 
             // Push a 0 roll count for the next evaluated position element
