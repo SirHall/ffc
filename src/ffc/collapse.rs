@@ -1,18 +1,16 @@
 use super::grid::Grid;
 use rand::prelude::SliceRandom;
 
-pub fn initialize<T : PartialEq + Eq + Hash + Clone + Display + Sync + Send>(
-    pattern : &Grid<T>,
-    out_width : usize,
-    out_height : usize,
-    unset : T,
-    outer : T,
-) -> Grid<T>
-{
+pub fn initialize<T: PartialEq + Eq + Hash + Clone + Display + Sync + Send>(
+    pattern: &Grid<T>,
+    out_width: usize,
+    out_height: usize,
+    unset: T,
+    outer: T,
+) -> Grid<T> {
     let out_grid = Grid::new(vec![unset; out_width * out_height], out_width);
 
-    for i in 0..pattern.get_area()
-    {
+    for i in 0..pattern.get_area() {
         let pos = pattern.i_to_pos(i);
         let tile = pattern.get(pos.clone(), outer.clone());
     }
@@ -20,18 +18,17 @@ pub fn initialize<T : PartialEq + Eq + Hash + Clone + Display + Sync + Send>(
     out_grid
 }
 
-pub fn collapse<T : PartialEq + Eq + Hash + Clone + Display + Sync + Send>(
-    mut grid : Grid<T>,
-    evaluate_order : &Vec<usize>,
-    pattern : &Grid<T>,
-    radius : isize,
+pub fn collapse<T: PartialEq + Eq + Hash + Clone + Display + Sync + Send>(
+    mut grid: Grid<T>,
+    evaluate_order: &Vec<usize>,
+    pattern: &Grid<T>,
+    radius: isize,
     // pattern_unset_matches_all : bool,
-    reroll_attempts : usize,
-    climb_amount_on_reroll : usize,
-    unset : T,
-    outer : T,
-) -> Option<Grid<T>>
-{
+    reroll_attempts: usize,
+    climb_amount_on_reroll: usize,
+    unset: T,
+    outer: T,
+) -> Option<Grid<T>> {
     // | evaluate_order
     // + evaluate_order is a list of indices where each index in the output grid exists once and only once.
     // + The solver will visit these indices in the order they exist in evaluate_order to resolve the cells.
@@ -55,10 +52,8 @@ pub fn collapse<T : PartialEq + Eq + Hash + Clone + Display + Sync + Send>(
 
     macro_rules! fallback {
         () => {
-            for _ix in 0..climb_amount_on_reroll
-            {
-                if !roll_counts.is_empty()
-                {
+            for _ix in 0..climb_amount_on_reroll {
+                if !roll_counts.is_empty() {
                     roll_counts.pop();
                     grid.set(grid.i_to_pos(roll_counts.len() - 1), unset.clone());
                 }
@@ -68,10 +63,8 @@ pub fn collapse<T : PartialEq + Eq + Hash + Clone + Display + Sync + Send>(
 
     let mut rng = rand::rngs::ThreadRng::default();
 
-    while roll_counts.len() < evaluate_order.len()
-    {
-        if roll_counts.is_empty()
-        {
+    while roll_counts.len() < evaluate_order.len() {
+        if roll_counts.is_empty() {
             return None; // We've failed to generate anything
         }
 
@@ -82,8 +75,7 @@ pub fn collapse<T : PartialEq + Eq + Hash + Clone + Display + Sync + Send>(
         let eval_pos = grid.i_to_pos(evaluate_order[i]);
         grid.set(eval_pos.clone(), unset.clone());
 
-        if roll_counts[i] > reroll_attempts
-        {
+        if roll_counts[i] > reroll_attempts {
             fallback!();
             continue;
         }
@@ -108,13 +100,10 @@ pub fn collapse<T : PartialEq + Eq + Hash + Clone + Display + Sync + Send>(
             })
             .collect::<Vec<_>>();
 
-        if valid_pattern_pos_list.is_empty()
-        {
+        if valid_pattern_pos_list.is_empty() {
             // We have nothing to put here, fall back to a previous step and roll again
             fallback!();
-        }
-        else
-        {
+        } else {
             // We have at-least one pattern we can super impose here, choose one at random
             let selection_pos = valid_pattern_pos_list.choose(&mut rng).unwrap().to_owned();
             // println!("Pos: {} {}", selection_pos.x, selection_pos.y);

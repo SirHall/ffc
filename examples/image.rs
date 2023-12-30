@@ -14,32 +14,30 @@ use std::{
 /// Example application of FFC, allowing the generation of collapsed images of far greater size than before
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
-struct Args
-{
+struct Args {
     #[clap(short, long)]
-    source : PathBuf,
+    source: PathBuf,
 
     #[clap(short, long)]
-    width :  usize,
+    width: usize,
     #[clap(short, long)]
-    height : usize,
+    height: usize,
     #[clap(short, long)]
-    radius : usize,
+    radius: usize,
     #[clap(short, long)]
-    wrap :   bool,
+    wrap: bool,
 
     #[clap(long)]
-    reroll_attempts : Option<usize>,
+    reroll_attempts: Option<usize>,
 
     // TODO: Add support back for this
     // #[clap(short, long)]
     // count : Option<usize>,
     #[clap(short, long)]
-    output : Option<PathBuf>,
+    output: Option<PathBuf>,
 }
 
-fn main() -> Result<()>
-{
+fn main() -> Result<()> {
     let args = Args::parse();
 
     let unset = 0;
@@ -47,7 +45,7 @@ fn main() -> Result<()>
 
     // 0 - Reserved for unset
     // 1 - Reserved for outer
-    let mut unique_count : usize = 2;
+    let mut unique_count: usize = 2;
 
     let img = ImageReader::open(args.source)?.decode()?;
 
@@ -57,19 +55,15 @@ fn main() -> Result<()>
     let mut pixel_to_int = HashMap::<u32, usize>::new();
     let mut int_to_pixel = vec![0u32; (img.width() * img.height()) as usize];
 
-    for (pixel_idx, pixel) in img.pixels().enumerate()
-    {
-        let pixel_rgba : u32 = u32::from_ne_bytes(pixel.2.to_rgba().0);
+    for (pixel_idx, pixel) in img.pixels().enumerate() {
+        let pixel_rgba: u32 = u32::from_ne_bytes(pixel.2.to_rgba().0);
         // println!("{pixel_rgba}");
         // The unique id for this color
-        let pixel_color_id : usize;
+        let pixel_color_id: usize;
 
-        if pixel_to_int.contains_key(&pixel_rgba)
-        {
+        if pixel_to_int.contains_key(&pixel_rgba) {
             pixel_color_id = pixel_to_int.get(&pixel_rgba).unwrap().to_owned(); // Inefficient double lookup
-        }
-        else
-        {
+        } else {
             pixel_color_id = unique_count;
             pixel_to_int.insert(pixel_rgba, pixel_color_id);
             int_to_pixel[pixel_color_id] = pixel_rgba;
@@ -103,16 +97,13 @@ fn main() -> Result<()>
             1,     // TODO:
             unset, // TODO:
             outer,
-        )
-        {
-            Some(generated_grid) =>
-            {
+        ) {
+            Some(generated_grid) => {
                 // We successfully generated this grid
                 println!("Finished generating grid {gen_num}");
                 let mut out_image = DynamicImage::new_rgba8(args.width as u32, args.height as u32);
 
-                for i in 0..generated_grid.get_area()
-                {
+                for i in 0..generated_grid.get_area() {
                     let pos = generated_grid.i_to_pos(i);
                     let pixel_rgba_u32 = int_to_pixel[generated_grid.get(pos.clone(), 1)];
                     // println!("{pixel_rgba_u32}",);
@@ -130,11 +121,10 @@ fn main() -> Result<()>
                         .unwrap_or(args.output.clone().unwrap_or_else(|| PathBuf::from("out.png"))),
                     image::ImageFormat::Png,
                 );
-            },
-            None =>
-            {
+            }
+            None => {
                 println!("Failed to generate grid {gen_num}");
-            },
+            }
         }
     }
 
