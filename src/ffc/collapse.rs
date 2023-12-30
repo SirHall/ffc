@@ -1,12 +1,7 @@
-use super::{
-    grid::{Grid, GridCellT},
-    pos::Pos,
-};
+use super::grid::Grid;
 use rand::prelude::SliceRandom;
-use rayon::prelude::*;
-use std::collections::HashMap;
 
-pub fn initialize<T : GridCellT>(
+pub fn initialize<T : PartialEq + Eq + Hash + Clone + Display + Sync + Send>(
     pattern : &Grid<T>,
     out_width : usize,
     out_height : usize,
@@ -25,7 +20,7 @@ pub fn initialize<T : GridCellT>(
     out_grid
 }
 
-pub fn collapse<T : GridCellT>(
+pub fn collapse<T : PartialEq + Eq + Hash + Clone + Display + Sync + Send>(
     mut grid : Grid<T>,
     evaluate_order : &Vec<usize>,
     pattern : &Grid<T>,
