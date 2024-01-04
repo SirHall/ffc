@@ -21,7 +21,7 @@ impl<T: PartialEq + Eq + Hash + Clone + Display + Sync + Send> Grid<T> {
         }
     }
 
-    pub fn pos_to_i(&self, pos: Pos) -> usize {
+    pub fn pos_to_i(&self, pos: &Pos) -> usize {
         ((pos.y * (self.width as isize)) + pos.x) as usize
     }
 
@@ -29,7 +29,7 @@ impl<T: PartialEq + Eq + Hash + Clone + Display + Sync + Send> Grid<T> {
         Pos::new((i % self.width) as isize, (i / self.width) as isize)
     }
 
-    pub fn get(&self, pos: Pos, outer: T) -> T {
+    pub fn get(&self, pos: &Pos, outer: T) -> T {
         if self.is_valid(pos.clone()) {
             self.grid
                 .get(self.pos_to_i(pos))
@@ -40,7 +40,7 @@ impl<T: PartialEq + Eq + Hash + Clone + Display + Sync + Send> Grid<T> {
         }
     }
 
-    pub fn set(&mut self, pos: Pos, val: T) {
+    pub fn set(&mut self, pos: &Pos, val: T) {
         if self.is_valid(pos.clone()) {
             let i = self.pos_to_i(pos);
             self.grid[i] = val;
@@ -61,7 +61,15 @@ impl<T: PartialEq + Eq + Hash + Clone + Display + Sync + Send> Grid<T> {
         pos.x < (self.width as isize) && pos.x >= 0 && pos.y < (self.height as isize) && pos.y >= 0
     }
 
-    pub fn compare(a: &Grid<T>, a_center: Pos, b: &Grid<T>, b_center: Pos, radius: isize, unset: T, outer: T) -> bool {
+    pub fn compare(
+        a: &Grid<T>,
+        a_center: &Pos,
+        b: &Grid<T>,
+        b_center: &Pos,
+        radius: isize,
+        unset: T,
+        outer: T,
+    ) -> bool {
         for dx in (-radius)..=radius {
             for dy in (-radius)..=radius {
                 let a_pos = a_center.rel(dx, dy);
@@ -70,8 +78,8 @@ impl<T: PartialEq + Eq + Hash + Clone + Display + Sync + Send> Grid<T> {
                 // unset - A tile that has not yet been given a value
                 // outer - A tile that falls outside of the grid
 
-                let a_tile = a.get(a_pos, outer.clone());
-                let b_tile = b.get(b_pos, outer.clone());
+                let a_tile = a.get(&a_pos, outer.clone());
+                let b_tile = b.get(&b_pos, outer.clone());
 
                 // A cool trick is to set 'outer' to 'unset' so that anything outside the image will match to everything
 

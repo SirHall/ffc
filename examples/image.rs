@@ -1,15 +1,11 @@
 use anyhow::Result;
 use clap::Parser;
-use ffc::ffc::collapse;
 use ffc::prelude::*;
 use image::io::Reader as ImageReader;
 use image::{DynamicImage, GenericImage, GenericImageView, Pixel, Rgba};
-use rand::prelude::SliceRandom;
-use std::io::Cursor;
-use std::{
-    collections::HashMap,
-    path::{Path, PathBuf},
-};
+use rand::seq::SliceRandom;
+use std::collections::HashMap;
+use std::path::PathBuf;
 
 /// Example application of FFC, allowing the generation of collapsed images of far greater size than before
 #[derive(Parser, Debug)]
@@ -24,7 +20,7 @@ struct Args {
     height: usize,
     #[clap(short, long)]
     radius: usize,
-    #[clap(short, long)]
+    #[clap(long)]
     wrap: bool,
 
     #[clap(long)]
@@ -35,13 +31,18 @@ struct Args {
     // count : Option<usize>,
     #[clap(short, long)]
     output: Option<PathBuf>,
+
+    #[clap(short, long)]
+    unset_and_outer_are_equal: Option<bool>,
 }
 
 fn main() -> Result<()> {
     let args = Args::parse();
 
+    let unset_and_outer_are_equal = args.unset_and_outer_are_equal.unwrap_or(false);
+
     let unset = 0;
-    let outer = 1;
+    let outer = if unset_and_outer_are_equal { unset } else { 1 };
 
     // 0 - Reserved for unset
     // 1 - Reserved for outer
@@ -70,7 +71,7 @@ fn main() -> Result<()> {
             unique_count += 1;
         }
 
-        pattern.set(pattern.i_to_pos(pixel_idx), pixel_color_id);
+        pattern.set(&pattern.i_to_pos(pixel_idx), pixel_color_id);
     }
 
     // ---
@@ -80,15 +81,17 @@ fn main() -> Result<()> {
     // TODO: Use a smarter evaluation order
     let mut evaluate_order = (0..(args.width * args.height)).collect::<Vec<_>>();
 
+    evaluate_order.reverse();
+
     // let mut rng = rand::thread_rng();
     // evaluate_order.shuffle(&mut rng);
 
     for gen_num in 1..=1
     //(args.count.unwrap_or(1))
     {
-        let mut grid = initialize::<usize>(&pattern, args.width, args.height, unset, outer);
+        let grid = initialize::<usize>(args.width, args.height, unset);
 
-        match collapse(
+        let collapsed = collapse(
             grid,
             &evaluate_order,
             &pattern,
@@ -97,7 +100,9 @@ fn main() -> Result<()> {
             1,     // TODO:
             unset, // TODO:
             outer,
-        ) {
+        );
+
+        match collapsed {
             Some(generated_grid) => {
                 // We successfully generated this grid
                 println!("Finished generating grid {gen_num}");
@@ -105,7 +110,7 @@ fn main() -> Result<()> {
 
                 for i in 0..generated_grid.get_area() {
                     let pos = generated_grid.i_to_pos(i);
-                    let pixel_rgba_u32 = int_to_pixel[generated_grid.get(pos.clone(), 1)];
+                    let pixel_rgba_u32 = int_to_pixel[generated_grid.get(&pos, 1)];
                     // println!("{pixel_rgba_u32}",);
                     let pixel_rgba_4u8 = pixel_rgba_u32.to_ne_bytes();
                     let pixel_rgba = Rgba::from_slice(&pixel_rgba_4u8);
@@ -115,12 +120,14 @@ fn main() -> Result<()> {
                 }
 
                 // println!("Saving grid {gen_num}");
-                out_image.save_with_format(
-                    args.output
-                        .clone()
-                        .unwrap_or(args.output.clone().unwrap_or_else(|| PathBuf::from("out.png"))),
-                    image::ImageFormat::Png,
-                );
+                out_image
+                    .save_with_format(
+                        args.output
+                            .clone()
+                            .unwrap_or(args.output.clone().unwrap_or_else(|| PathBuf::from("out.png"))),
+                        image::ImageFormat::Png,
+                    )
+                    .expect("Failed to save out.png");
             }
             None => {
                 println!("Failed to generate grid {gen_num}");

@@ -1,21 +1,14 @@
 use super::grid::Grid;
 use rand::prelude::SliceRandom;
+use std::fmt::Display;
+use std::hash::Hash;
 
 pub fn initialize<T: PartialEq + Eq + Hash + Clone + Display + Sync + Send>(
-    pattern: &Grid<T>,
     out_width: usize,
     out_height: usize,
     unset: T,
-    outer: T,
 ) -> Grid<T> {
-    let out_grid = Grid::new(vec![unset; out_width * out_height], out_width);
-
-    for i in 0..pattern.get_area() {
-        let pos = pattern.i_to_pos(i);
-        let tile = pattern.get(pos.clone(), outer.clone());
-    }
-
-    out_grid
+    Grid::new(vec![unset; out_width * out_height], out_width)
 }
 
 pub fn collapse<T: PartialEq + Eq + Hash + Clone + Display + Sync + Send>(
@@ -23,7 +16,6 @@ pub fn collapse<T: PartialEq + Eq + Hash + Clone + Display + Sync + Send>(
     evaluate_order: &Vec<usize>,
     pattern: &Grid<T>,
     radius: isize,
-    // pattern_unset_matches_all : bool,
     reroll_attempts: usize,
     climb_amount_on_reroll: usize,
     unset: T,
@@ -46,16 +38,24 @@ pub fn collapse<T: PartialEq + Eq + Hash + Clone + Display + Sync + Send>(
     // + When we reroll we jump backward through the evaluate_order list by this number, generally advised to keep
     // + this at 1.
 
+    let pattern_points = (0..pattern.get_area())
+        .into_iter()
+        .map(|pattern_i| pattern.i_to_pos(pattern_i))
+        .collect::<Vec<_>>();
+
     // roll_count serves as a stack to count the number of times we have rolled the current evaluation index (always the
     // top of the stack/last item)
     let mut roll_counts = vec![0];
 
     macro_rules! fallback {
         () => {
+            // println!("fallback");
             for _ix in 0..climb_amount_on_reroll {
                 if !roll_counts.is_empty() {
                     roll_counts.pop();
-                    grid.set(grid.i_to_pos(roll_counts.len() - 1), unset.clone());
+                    // let i = roll_counts.len() - 1;
+                    // let eval_pos = evaluate_order[i];
+                    // grid.set(grid.i_to_pos(eval_pos), unset.clone());
                 }
             }
         };
@@ -72,42 +72,32 @@ pub fn collapse<T: PartialEq + Eq + Hash + Clone + Display + Sync + Send>(
         // println!("i: {} {}", i, roll_counts[i]);
 
         roll_counts[i] += 1; // We are doing the roll for this evaluation index now
-        let eval_pos = grid.i_to_pos(evaluate_order[i]);
-        grid.set(eval_pos.clone(), unset.clone());
 
         if roll_counts[i] > reroll_attempts {
             fallback!();
             continue;
         }
 
+        let eval_pos = grid.i_to_pos(evaluate_order[i]);
+        grid.set(&eval_pos, unset.clone());
+
         // println!("{i}");
 
         // Iterate over all cells in the source pattern, and form a list of all local patterns that could be used at
         // this tile's location
-        let valid_pattern_pos_list = (0..pattern.get_area())
-            .into_iter() // This is about 9 times slower when using into_par_iter
-            .map(|pattern_i| pattern.i_to_pos(pattern_i))
-            .filter(|p_pos| {
-                Grid::compare(
-                    &grid,
-                    eval_pos.clone(),
-                    pattern,
-                    p_pos.to_owned(),
-                    radius,
-                    unset.clone(),
-                    outer.clone(),
-                )
-            })
+        let valid_pattern_pos_list = pattern_points
+            .iter()
+            .filter(|p_pos| Grid::compare(pattern, &p_pos, &grid, &eval_pos, radius, unset.clone(), outer.clone()))
             .collect::<Vec<_>>();
 
         if valid_pattern_pos_list.is_empty() {
             // We have nothing to put here, fall back to a previous step and roll again
-            fallback!();
+            // fallback!();
         } else {
             // We have at-least one pattern we can super impose here, choose one at random
             let selection_pos = valid_pattern_pos_list.choose(&mut rng).unwrap().to_owned();
             // println!("Pos: {} {}", selection_pos.x, selection_pos.y);
-            grid.set(eval_pos, pattern.get(selection_pos, outer.clone()));
+            grid.set(&eval_pos, pattern.get(selection_pos, outer.clone()));
 
             // Push a 0 roll count for the next evaluated position element
 

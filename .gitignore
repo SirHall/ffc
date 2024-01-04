@@ -1,2 +1,5 @@
 /target
 Cargo.lock
+
+# Makes it easier to test out images
+/*.png
