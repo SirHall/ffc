@@ -30,7 +30,7 @@ impl<T: PartialEq + Eq + Hash + Clone + Display + Sync + Send> Grid<T> {
     }
 
     pub fn get(&self, pos: &Pos, outer: T) -> T {
-        if self.is_valid(pos.clone()) {
+        if self.is_valid(pos) {
             self.grid
                 .get(self.pos_to_i(pos))
                 .map(|v| v.to_owned())
@@ -41,7 +41,7 @@ impl<T: PartialEq + Eq + Hash + Clone + Display + Sync + Send> Grid<T> {
     }
 
     pub fn set(&mut self, pos: &Pos, val: T) {
-        if self.is_valid(pos.clone()) {
+        if self.is_valid(pos) {
             let i = self.pos_to_i(pos);
             self.grid[i] = val;
         }
@@ -57,7 +57,7 @@ impl<T: PartialEq + Eq + Hash + Clone + Display + Sync + Send> Grid<T> {
         self.grid.len()
     }
 
-    pub fn is_valid(&self, pos: Pos) -> bool {
+    pub fn is_valid(&self, pos: &Pos) -> bool {
         pos.x < (self.width as isize) && pos.x >= 0 && pos.y < (self.height as isize) && pos.y >= 0
     }
 
