@@ -1,9 +1,8 @@
 use super::grid::Grid;
 use rand::prelude::SliceRandom;
-use std::fmt::Display;
 use std::hash::Hash;
 
-pub fn initialize<T: PartialEq + Eq + Hash + Clone + Display + Sync + Send>(
+pub fn initialize<T: PartialEq + Eq + Hash + Clone + Sync + Send>(
     out_width: usize,
     out_height: usize,
     unset: T,
@@ -11,7 +10,7 @@ pub fn initialize<T: PartialEq + Eq + Hash + Clone + Display + Sync + Send>(
     Grid::new(vec![unset; out_width * out_height], out_width)
 }
 
-pub fn collapse<T: PartialEq + Eq + Hash + Clone + Display + Sync + Send>(
+pub fn collapse<T: PartialEq + Eq + Hash + Clone + Sync + Send>(
     mut grid: Grid<T>,
     evaluate_order: &Vec<usize>,
     pattern: &Grid<T>,

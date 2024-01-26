@@ -1,18 +1,17 @@
 use super::pos::Pos;
-use std::fmt::Display;
 use std::hash::Hash;
 
 // TODO: Switch back to this when we have trait aliases
 // pub trait GridCellT = PartialEq + Eq + Hash + Clone + Display + Sync + Send;
 
 #[derive(Debug, Clone)]
-pub struct Grid<T: PartialEq + Eq + Hash + Clone + Display + Sync + Send> {
+pub struct Grid<T: PartialEq + Eq + Hash + Clone + Sync + Send> {
     grid: Vec<T>,
     width: usize,
     height: usize,
 }
 
-impl<T: PartialEq + Eq + Hash + Clone + Display + Sync + Send> Grid<T> {
+impl<T: PartialEq + Eq + Hash + Clone + Sync + Send> Grid<T> {
     pub fn new(cells: Vec<T>, width: usize) -> Self {
         Self {
             width,
