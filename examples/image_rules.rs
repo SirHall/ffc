@@ -40,9 +40,9 @@ struct Args {
 enum Tile {
     Unset,
     Outer,
-    DeepWater,
+    // DeepWater,
     Water,
-    ShallowWater,
+    // ShallowWater,
     Sand,
     Grass,
     Forest,
@@ -66,88 +66,47 @@ fn main() {
     let grid = initialize(width, height, unset);
     let history_grid = initialize(width, height, unset);
 
-    let tile_options = vec![
-        Tile::Water,
-        Tile::ShallowWater,
-        Tile::Sand,
-        Tile::Grass,
-        Tile::Forest,
-        Tile::Mountain,
-    ];
+    let tile_options = vec![Tile::Water, Tile::Sand, Tile::Grass, Tile::Forest, Tile::Mountain];
 
     let unset_tile_rule = CollapseRule::False;
     let outer_tile_rule = CollapseRule::False;
-    let deep_water_tile_rule = CollapseRule::NextTo(Box::new(CollapseRule::Or(vec![
+    let water_tile_rule = CollapseRule::NextTo(Box::new(CollapseRule::Or(vec![
+        CollapseRule::Is(Tile::Water),
         CollapseRule::Is(Tile::Outer),
-        CollapseRule::Is(Tile::DeepWater),
-        CollapseRule::Is(Tile::Water),
-        // CollapseRule::Is(Tile::Mountain),
-    ])));
-    let water_tile_rule = CollapseRule::And(vec![
-        CollapseRule::NextTo(Box::new(CollapseRule::Or(vec![
-            CollapseRule::Is(Tile::Water),
-            CollapseRule::Is(Tile::Outer),
-            CollapseRule::Is(Tile::DeepWater),
-            CollapseRule::Is(Tile::ShallowWater),
-            // CollapseRule::Is(Tile::Forest),
-        ]))),
-        CollapseRule::Not(Box::new(CollapseRule::Near(
-            Box::new(CollapseRule::Or(vec![
-                CollapseRule::Is(Tile::Sand),
-                CollapseRule::Is(Tile::Grass),
-            ])),
-            3,
-        ))),
-    ]);
-    let shallow_water_tile_rule = CollapseRule::NextTo(Box::new(CollapseRule::Or(vec![
-        CollapseRule::Is(Tile::ShallowWater),
-        CollapseRule::Is(Tile::Water),
         CollapseRule::Is(Tile::Sand),
     ])));
-    let sand_tile_rule = CollapseRule::And(vec![
-        CollapseRule::NextTo(Box::new(CollapseRule::Or(vec![
-            CollapseRule::Is(Tile::Sand),
-            CollapseRule::Is(Tile::ShallowWater),
-            CollapseRule::Is(Tile::Grass),
-            // CollapseRule::Is(Tile::Mountain),
-        ]))),
-        CollapseRule::Not(Box::new(CollapseRule::Near(Box::new(CollapseRule::Is(Tile::Outer)), 5))),
-    ]);
-    let grass_tile_rule = CollapseRule::And(vec![
-        CollapseRule::NextTo(Box::new(CollapseRule::Or(vec![
-            CollapseRule::Is(Tile::Grass),
-            CollapseRule::Is(Tile::Sand),
-            CollapseRule::Is(Tile::Forest),
-        ]))),
-        CollapseRule::Not(Box::new(CollapseRule::Near(Box::new(CollapseRule::Is(Tile::Outer)), 6))),
-    ]);
+    let sand_tile_rule = CollapseRule::NextTo(Box::new(CollapseRule::Or(vec![
+        CollapseRule::Is(Tile::Sand),
+        CollapseRule::Is(Tile::Water),
+        CollapseRule::Is(Tile::Grass),
+        // CollapseRule::Is(Tile::Mountain),
+    ])));
+    let grass_tile_rule = CollapseRule::NextTo(Box::new(CollapseRule::Or(vec![
+        CollapseRule::Is(Tile::Grass),
+        CollapseRule::Is(Tile::Sand),
+        CollapseRule::Is(Tile::Forest),
+    ])));
 
-    let forest_tile_rule = CollapseRule::And(vec![
-        CollapseRule::NextTo(Box::new(CollapseRule::Or(vec![
-            CollapseRule::Is(Tile::Forest),
-            CollapseRule::Is(Tile::Grass),
-            CollapseRule::Is(Tile::Mountain),
-            // CollapseRule::Is(Tile::Water),
-        ]))),
-        CollapseRule::Not(Box::new(CollapseRule::Near(Box::new(CollapseRule::Is(Tile::Outer)), 7))),
-    ]);
+    let forest_tile_rule = CollapseRule::NextTo(Box::new(CollapseRule::Or(vec![
+        CollapseRule::Is(Tile::Forest),
+        CollapseRule::Is(Tile::Grass),
+        CollapseRule::Is(Tile::Mountain),
+        // CollapseRule::Is(Tile::Water),
+    ])));
 
-    let mountain_tile_rule = CollapseRule::And(vec![
-        CollapseRule::NextTo(Box::new(CollapseRule::Or(vec![
-            CollapseRule::Is(Tile::Mountain),
-            CollapseRule::Is(Tile::Forest),
-            // CollapseRule::Is(Tile::DeepWater),
-            // CollapseRule::Is(Tile::Sand),
-        ]))),
-        CollapseRule::Not(Box::new(CollapseRule::Near(Box::new(CollapseRule::Is(Tile::Outer)), 8))),
-    ]);
+    let mountain_tile_rule = CollapseRule::NextTo(Box::new(CollapseRule::Or(vec![
+        CollapseRule::Is(Tile::Mountain),
+        CollapseRule::Is(Tile::Forest),
+        // CollapseRule::Is(Tile::DeepWater),
+        // CollapseRule::Is(Tile::Sand),
+    ])));
 
     let tile_to_rule = |&tile| match tile {
         Tile::Unset => &unset_tile_rule,
         Tile::Outer => &outer_tile_rule,
-        Tile::DeepWater => &deep_water_tile_rule,
+        // Tile::DeepWater => &deep_water_tile_rule,
         Tile::Water => &water_tile_rule,
-        Tile::ShallowWater => &shallow_water_tile_rule,
+        // Tile::ShallowWater => &shallow_water_tile_rule,
         Tile::Sand => &sand_tile_rule,
         Tile::Grass => &grass_tile_rule,
         Tile::Forest => &forest_tile_rule,
@@ -181,8 +140,8 @@ fn main() {
                 Tile::Grass => Rgb([0, 255, 0]),
                 Tile::Forest => Rgb([0, 128, 0]),
                 Tile::Mountain => Rgb([128, 128, 128]),
-                Tile::DeepWater => Rgb([0, 0, 128]),
-                Tile::ShallowWater => Rgb([0, 128, 255]),
+                // Tile::DeepWater => Rgb([0, 0, 128]),
+                // Tile::ShallowWater => Rgb([0, 128, 255]),
             };
 
             unsafe {
