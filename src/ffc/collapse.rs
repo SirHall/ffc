@@ -68,7 +68,6 @@ pub fn collapse<T: PartialEq + Eq + Hash + Clone + Sync + Send>(
         }
 
         let i = roll_counts.len() - 1;
-        // println!("i: {} {}", i, roll_counts[i]);
 
         roll_counts[i] += 1; // We are doing the roll for this evaluation index now
 
@@ -79,8 +78,6 @@ pub fn collapse<T: PartialEq + Eq + Hash + Clone + Sync + Send>(
 
         let eval_pos = grid.i_to_pos(evaluate_order[i]);
         grid.set(&eval_pos, unset.clone());
-
-        // println!("{i}");
 
         // Iterate over all cells in the source pattern, and form a list of all local patterns that could be used at
         // this tile's location

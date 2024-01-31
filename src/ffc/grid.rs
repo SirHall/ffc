@@ -90,4 +90,8 @@ impl<T: PartialEq + Eq + Hash + Clone + Sync + Send> Grid<T> {
 
         true
     }
+
+    pub fn get_cells(&self) -> &Vec<T> {
+        &self.grid
+    }
 }

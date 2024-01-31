@@ -1,5 +1,5 @@
 pub mod ffc;
 #[cfg(test)]
-pub mod tests;
+mod tests;
 
 pub mod prelude;
